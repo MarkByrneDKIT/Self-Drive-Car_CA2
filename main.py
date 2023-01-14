@@ -120,27 +120,30 @@ def batch_generator(image_paths, steering_ang, batch_size, is_training):
 
 # Model
 def nvidia_model():
-    model = Sequential()    # create a sequential model
-    model.add(Convolution2D(24, (5, 5), strides=(2, 2), input_shape=(66, 200, 3), activation='elu'))    # add a convolution layer
-    model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='elu'))  # add a convolution layer
-    model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='elu'))  # add a convolution layer
-    model.add(Convolution2D(64, (3, 3), activation='elu'))  # add a convolution layer
-    model.add(Convolution2D(64, (3, 3), activation='elu'))  # add a convolution layer
-    #model.add(Dropout(0.5)) # add a dropout layer
-    model.add(Flatten())    # flatten the model
-    model.add(Dense(100, activation='elu')) # add a dense layer
-    model.add(Dense(50, activation='elu'))  # add a dense layer
-    model.add(Dense(10, activation='elu'))  # add a dense layer
-    model.add(Dense(1)) # add a dense layer
-    optimizer = Adam(learning_rate=0.001)   # create an optimizer
-    model.compile(loss='mse', optimizer=optimizer)  # compile the model
-    return model    # return the model
+    model = Sequential()
+    model.add(Convolution2D(24, (5, 5), strides=(2, 2), input_shape=(66, 200, 3), activation='elu'))
+    model.add(Convolution2D(36, (5, 5), strides=(2, 2), activation='elu'))
+    model.add(Convolution2D(48, (5, 5), strides=(2, 2), activation='elu'))
+    model.add(Convolution2D(64, (3, 3), activation='elu'))
+    model.add(Convolution2D(64, (3, 3), activation='elu'))
+    model.add(Flatten())
+    model.add(Dense(100, activation='elu'))
+    model.add(Dense(50, activation='elu'))
+    model.add(Dense(10, activation='elu'))
+    model.add(Dense(1))
+    optimizer = Adam(learning_rate=0.0001)
+    model.compile(loss='mse', optimizer=optimizer)
+    return model
 
+
+print("STARTING UP...")
 # Read in the Data from the driving_log.csv file
-datadir = "E:\\CA2\\CA2\\Recordings\\Track_1"  # Path to the data folder
+datadir = "E:\\CA2\\CA2\\Recordings\\Track_1_V4"  # Path to the data folder
 columns = ['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']   # Column names for the data
 data = pd.read_csv(os.path.join(datadir, 'driving_log.csv'), names = columns)   # Read in the data
 pd.set_option('display.max_columns', 7) # Display all columns
+
+print("Num of Center: ", data['center'])
 
 
 data['center'] = data['center'].apply(path_leaf)    # Get the file name for the center image
@@ -148,34 +151,34 @@ data['left'] = data['left'].apply(path_leaf)    # Get the file name for the left
 data['right'] = data['right'].apply(path_leaf)  # Get the file name for the right image
 
 
-num_bins = 25   # Number of bins for the histogram
-samples_per_bin = 400    # Number of samples per bin
-hist, bins = np.histogram(data['steering'], num_bins)   # Histogram of the steering angles
-centre = (bins[:-1] + bins[1:])*0.5  # Centre of the bins
-plt.bar(centre, hist, width=0.05)   # Plot the histogram
-plt.plot((np.min(data['steering']), np.max(data['steering'])), (samples_per_bin, samples_per_bin))  # Plot the line for the number of samples per bin
-#plt.show()  # Show the plot
+num_bins = 25   
+samples_per_bin = 200   
+hist, bins = np.histogram(data['steering'], num_bins)   
+centre = (bins[:-1] + bins[1:])*0.5  
+plt.bar(centre, hist, width=0.05)  
+plt.plot((np.min(data['steering']), np.max(data['steering'])), (samples_per_bin, samples_per_bin))  
+plt.show()  # Show the plot
 
-remove_list=[]  # List of images to remove
-print('Total data: ', len(data))    # Print the total number of data
+remove_list=[]  # 
+print('Total data: ', len(data))    
 
-for j in range(num_bins):   # Loop through the bins
-    list_ = []  # Empty list
-    for i in range(len(data['steering'])):  # Loop through the steering angles
-        if bins[j] <= data['steering'][i] <= bins[j+1]: # If the steering angle is in the bin
-            list_.append(i) # Append the index to the list
-    list_ = shuffle(list_)  # Shuffle the list
-    list_ = list_[samples_per_bin:] # Remove the number of samples per bin
-    remove_list.extend(list_)   # Append the list to the remove list
+for j in range(num_bins):  
+    list_ = []  
+    for i in range(len(data['steering'])): 
+        if bins[j] <= data['steering'][i] <= bins[j+1]: #    
+            list_.append(i) 
+    list_ = shuffle(list_) 
+    list_ = list_[samples_per_bin:] 
+    remove_list.extend(list_)   
 
-print("Remove: ", len(remove_list))  # Print the number of images to remove
+print("Removed Images: ", len(remove_list))  # Print the number of images to remove
 data.drop(data.index[remove_list], inplace=True)    # Drop the images from the data
-print("Remaining: ", len(data)) # Print the number of remaining images
+print("Remaining Images: ", len(data)) # Print the number of remaining images
 
-hist, bins = np.histogram(data['steering'], num_bins)   # Histogram of the steering angles
-plt.bar(centre, hist, width=0.05)   # Plot the histogram
-plt.plot((np.min(data['steering']), np.max(data['steering'])), (samples_per_bin, samples_per_bin))  # Plot the line for the number of samples per bin
-#plt.show()
+hist, bins = np.histogram(data['steering'], num_bins)   
+plt.bar(centre, hist, width=0.05)  
+plt.plot((np.min(data['steering']), np.max(data['steering'])), (samples_per_bin, samples_per_bin)) 
+plt.show()
 
 image_paths, steerings = load_steering_img(datadir+'/IMG', data)    # Load the images and steering angles
 X_train, X_valid, y_train, y_valid = train_test_split(image_paths, steerings, test_size=0.2, random_state=6)    # Split the data into training and validation sets
@@ -186,7 +189,7 @@ axes[0].hist(y_train, bins=num_bins, width=0.05, color='blue')
 axes[0].set_title("Training set")   
 axes[1].hist(y_valid, bins=num_bins, width=0.05, color='red')
 axes[1].set_title("Validation set")
-#plt.show()
+plt.show()
 
 image = image_paths[100]
 original_image = mpimg.imread(image)
@@ -197,7 +200,7 @@ axes[0].imshow(original_image)
 axes[0].set_title("Original image")
 axes[1].imshow(preprocessed_image)
 axes[1].set_title("Preprocessed image")
-#plt.show()
+plt.show()
 
 #X_train = np.array(list(map(preprocess_img, X_train)))
 #X_valid = np.array(list(map(preprocess_img, X_valid)))
@@ -216,7 +219,7 @@ axs[0].imshow(original_image)
 axs[0].set_title("Original Image")
 axs[1].imshow(zoomed_image)
 axs[1].set_title("Zoomed Image")
-#plt.show()
+plt.show()
 
 image = image_paths[random.randint(0, 1000)]
 original_image = mpimg.imread(image)
@@ -227,7 +230,7 @@ axs[0].imshow(original_image)
 axs[0].set_title("Original Image")
 axs[1].imshow(panned_image)
 axs[1].set_title("Panned Image")
-#plt.show()
+plt.show()
 
 image = image_paths[random.randint(0, 1000)]
 original_image = mpimg.imread(image)
@@ -238,7 +241,7 @@ axs[0].imshow(original_image)
 axs[0].set_title("Original Image")
 axs[1].imshow(bright_image)
 axs[1].set_title("Bright Image")
-#plt.show()
+plt.show()
 
 random_index = random.randint(0, 1000)
 image = image_paths[random_index]
@@ -251,7 +254,7 @@ axs[0].imshow(original_image)
 axs[0].set_title("Original Image - " + "Steering Angle: " + str(steering_angle))
 axs[1].imshow(flipped_image)
 axs[1].set_title("Flipped Image"+ "Steering Angle: " + str(flipped_angle))
-#plt.show()
+plt.show()
 
 ncols = 2
 nrows = 10
@@ -267,19 +270,25 @@ for i in range(10):
     axs[i][0].set_title("Original Image")
     axs[i][1].imshow(augmented_image)
     axs[i][1].set_title("Augmented Image")
-#plt.show()
+plt.show()
 
 model = nvidia_model()
 print(model.summary())
 
-#error on next line
-history = model.fit(batch_generator(X_train, y_train, 200, 1), steps_per_epoch=200, epochs=30, validation_data=batch_generator(X_valid, y_valid, 200, 0), validation_steps=200, verbose=1, shuffle=1)
+# train 300 40 times, 300  validate 200 steps generate 200 images
+history = model.fit(batch_generator(X_train, y_train, 200, 1), steps_per_epoch=160, epochs=26, validation_data=batch_generator(X_valid, y_valid, 160, 0), validation_steps=200, verbose=1, shuffle=1)
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.legend(["Training", "Validation"])
+#plt.ylim(0, 1)
 plt.title('Loss')
 plt.xlabel("Epoch")
 plt.show()
 
+
+
+
 model.save('model.h5')
+print("Model saved successfully")
+
